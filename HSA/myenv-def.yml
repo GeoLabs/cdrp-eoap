@@ -1,0 +1,25 @@
+name: myenv
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - requests
+  - python-dateutil
+  - shapely
+  - lxml
+  - pandas
+  - gdal=3.6.2
+  - matplotlib
+  - numpy
+  - richdem
+  - pip
+  - pip:
+      - s3cmd
+      - rasterio
+      - earthpy
+      - elevation
+      - numpy
+      - loguru
+      - click
+      - rio-stac
+

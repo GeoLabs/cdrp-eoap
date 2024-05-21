@@ -1,0 +1,103 @@
+cwlVersion: v1.0
+$namespaces:
+  s: https://schema.org/
+s:softwareVersion: 1.0.0
+schemas:
+  - http://schema.org/version/9.0/schemaorg-current-http.rdf
+$graph:
+- class: Workflow
+  id: geolabs_cdrp_hsa
+  label: GeoLabs - D131 - CDRP - Hillshade, Slope and Aspect
+  doc: GeoLabs - D131 - CDRP - Slope Aspect and Hillshade computation
+  s:author:
+    - class: s:Person
+      s:identifier: https://orcid.org/0000-0002-9505-6204
+      s:email: mailto:rajatshinde2303@gmail.com
+      s:name: Rajat Shinde
+
+  s:contributor:
+    - class: s:Person
+      s:identifier: https://orcid.org/0000-0002-9617-8641
+      s:email: mailto:gerald.fenoy@geolabs.fr
+      s:name: Gérald Fenoy
+
+  s:citation: https://doi.org/10.1109/PROC.1981.11918
+  requirements: []
+  inputs:
+    item:
+      doc: Reference to a DEM dataset
+      label: DEM dataset reference
+      type: string
+  outputs:
+    - id: stac_catalog
+      outputSource:
+        - node_detect/stac-catalog
+      type: Directory
+  steps:
+    node_detect:
+      run: "#run-app"
+      in:
+        item: item
+      out:
+        - stac-catalog
+- class: CommandLineTool
+  id: run-app
+  requirements:
+    InitialWorkDirRequirement:
+      listing:
+      - entryname: catalog.json
+        entry: |-  
+            {
+                "id": "catalog",
+                "stac_version": "1.0.0",
+                "links": [
+                    {
+                        "type": "application/geo+json",
+                        "rel": "item",
+                        "href": "myMockStacItem/hillshade.json"
+                    },
+                    {
+                        "type": "application/geo+json",
+                        "rel": "item",
+                        "href": "myMockStacItem/slope.json"
+                    },
+                    {
+                        "type": "application/geo+json",
+                        "rel": "item",
+                        "href": "myMockStacItem/aspect.json"
+                    },
+                    {
+                        "type": "application/json",
+                        "rel": "self",
+                        "href": "catalog.json"
+                    }
+                ],
+                "type": "Catalog",
+                "description": "Root catalog"
+            }
+
+    InlineJavascriptRequirement: {}
+    EnvVarRequirement:
+      envDef:
+        PYTHONPATH: /opt/conda/envs/myenv/site-packages/
+    ResourceRequirement:
+      coresMax: 1
+      ramMax: 1024
+  hints:
+    DockerRequirement:
+      dockerPull: geolabs/cdrp-hsa-package:1.0
+  baseCommand: ["python", "-m", "app"]
+  arguments: []
+  inputs:
+    item:
+      type: string
+      inputBinding:
+          prefix: --input-item
+
+  outputs:
+    stac-catalog:
+      outputBinding:
+          glob: .
+      type: Directory
+
+
