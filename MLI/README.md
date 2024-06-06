@@ -1,6 +1,6 @@
-# OGC EOAP for Hillshade, Slope and Aspect
+# OGC EOAP for ML Inference as a service
 
-For a given DEM, this EOAP computes Slope and Aspect using the [RichDEM](https://richdem.readthedocs.io/en/latest/) library [[1]](#references). Hillshade is relying on [EarthPy](https://earthpy.readthedocs.io/en/latest/). 
+Description TBA
 
 ## Usage
 
@@ -45,7 +45,14 @@ curl -X 'POST' \
   -H 'Content-Type: application/json' \
   -d '{
   "inputs": {
-    "item": "<YOUR_DEM_URL>"
+    "dem": "https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/DEM/DEM_030.tif",
+    "model": "https://www.geolabs.fr/dl/.RawData/M_ALL_006.hdf5",
+    "hillshade": "https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/DEM/DEM_030_HILLSHADE.tif",
+    "slope": "https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/DEM/DEM_030_SLOPE.tif",
+    "pre-image": "https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/fromOptical/JIUZ_PRE_S2_RGB_010_UINT8.tif",
+    "post-image": "https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/fromOptical/JIUZ_POST_S2_RGB_010_UINT8.tif",
+    "mask": "https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/noDataMask/SNOW_CLOUD_MASK_010.tif",
+    "boundary": "https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/testBoundary/Test_006.tif"
   }
 }'
 ````
