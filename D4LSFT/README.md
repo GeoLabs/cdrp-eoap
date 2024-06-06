@@ -1,6 +1,6 @@
-# OGC EOAP for Hillshade, Slope and Aspect
+# OGC EOAP for displacement due to landslide based on optical flow technique
 
-For a given DEM, this EOAP computes Slope and Aspect using the [RichDEM](https://richdem.readthedocs.io/en/latest/) library [[1]](#references). Hillshade is relying on [EarthPy](https://earthpy.readthedocs.io/en/latest/). 
+This script will generate an output containing the displacement due to landslide based on optical flow technique.
 
 ## Usage
 
@@ -13,7 +13,10 @@ docker build . -t geolabs/cdrp-hsa-package:1.0
 Run the EOAP from the command line.
 
 ````
-cwltool app.yml#geolabs_cdrp_hsa --item <YOUR_DEM_URL>
+cwltool ../app.yml#geolabs_cdrp_hsa \
+    --pre-s2-mozaic https://www.geolabs.fr/dl/.taiwan/data_taiwan/S2_mozaic/merged_s2_pre_2018.tif \
+    --post-s2-mozaic https://www.geolabs.fr/dl/.taiwan/data_taiwan/S2_mozaic/Merged_s2_2018_post.tif \
+    --dem https://www.geolabs.fr/dl/.taiwan/data_taiwan/DEM/merged_dem_2018.tif
 ````
 
 To deploy the EOAP on the ZOO-Project-DRU, use the following requests.
@@ -36,7 +39,9 @@ curl -X 'POST' \
   -H 'Content-Type: application/json' \
   -d '{
   "inputs": {
-    "item": "<YOUR_DEM_URL>"
+    "pre-s2-mozaic": "<YOUR_PRE_MOZAIC_URL>",
+    "post-s2-mozaic": "<YOUR_POST_MOZAIC_URL>",
+    "dem": "<YOUR_DEM_URL>"
   }
 }'
 ````
