@@ -6,9 +6,9 @@ schemas:
   - http://schema.org/version/9.0/schemaorg-current-http.rdf
 $graph:
 - class: Workflow
-  id: geolabs_cdrp_hsa
-  label: GeoLabs - D131 - CDRP - Hillshade, Slope and Aspect
-  doc: GeoLabs - D131 - CDRP - Slope Aspect and Hillshade computation
+  id: geolabs_cdrp_mli
+  label: GeoLabs - D131 - CDRP - ML Inference as a service
+  doc: GeoLabs - D131 - CDRP - ML Inference as a service
   s:author:
     - class: s:Person
       s:identifier: https://orcid.org/0000-0002-9505-6204
@@ -24,9 +24,37 @@ $graph:
   s:citation: https://doi.org/10.1109/PROC.1981.11918
   requirements: []
   inputs:
-    item:
+    dem:
       doc: Reference to a DEM dataset
       label: DEM dataset reference
+      type: string
+    model:
+      doc: Reference to pre-trained model
+      label: pre-trained model reference
+      type: string
+    hillshade:
+      doc: Reference to a HILLSHADE dataset
+      label: HILLSHADE dataset reference
+      type: string
+    slope:
+      doc: Reference to a SLOPE dataset
+      label: SLOPE dataset reference
+      type: string
+    pre-image:
+      doc: Reference to a pre-event image
+      label: pre-event image reference
+      type: string
+    post-image:
+      doc: Reference to a post-event image
+      label: post-event image dataset reference
+      type: string
+    mask:
+      doc: Reference to a cloud mask dataset
+      label: cloud mask dataset reference
+      type: string
+    boundary:
+      doc: Reference to a boundary
+      label: boundary reference
       type: string
   outputs:
     - id: stac_catalog
@@ -37,7 +65,14 @@ $graph:
     node_detect:
       run: "#run-app"
       in:
-        item: item
+        dem: dem
+        model: model
+        hillshade: hillshade
+        slope: slope
+        pre-image: pre-image
+        post-image: post-image
+        mask: mask
+        boundary: boundary
       out:
         - stac-catalog
 - class: CommandLineTool
@@ -54,17 +89,12 @@ $graph:
                     {
                         "type": "application/geo+json",
                         "rel": "item",
-                        "href": "myMockStacItem/hillshade.json"
+                        "href": "myMockStacItem/LS_Predict_Conf.json"
                     },
                     {
                         "type": "application/geo+json",
                         "rel": "item",
-                        "href": "myMockStacItem/slope.json"
-                    },
-                    {
-                        "type": "application/geo+json",
-                        "rel": "item",
-                        "href": "myMockStacItem/aspect.json"
+                        "href": "myMockStacItem/LS_Predict_50.json"
                     },
                     {
                         "type": "application/json",
@@ -81,18 +111,46 @@ $graph:
       envDef:
         PYTHONPATH: /opt/conda/envs/myenv/site-packages/
     ResourceRequirement:
-      coresMax: 1
-      ramMax: 1024
+      coresMax: 2
+      ramMax: 4096
   hints:
     DockerRequirement:
-      dockerPull: geolabs/cdrp-hsa-package:1.0
+      dockerPull: geolabs/cdrp-mli-package:1.0
   baseCommand: ["python", "-m", "app"]
   arguments: []
   inputs:
-    item:
+    dem:
       type: string
       inputBinding:
-          prefix: --input-item
+          prefix: --dem
+    model:
+      type: string
+      inputBinding:
+          prefix: --model
+    hillshade:
+      type: string
+      inputBinding:
+          prefix: --hillshade
+    slope:
+      type: string
+      inputBinding:
+          prefix: --slope
+    pre-image:
+      type: string
+      inputBinding:
+          prefix: --pre-image
+    post-image:
+      type: string
+      inputBinding:
+          prefix: --post-image
+    mask:
+      type: string
+      inputBinding:
+          prefix: --mask
+    boundary:
+      type: string
+      inputBinding:
+          prefix: --boundary
 
   outputs:
     stac-catalog:
@@ -100,9 +158,9 @@ $graph:
           glob: .
       type: Directory
 
-
 $namespaces:
   s: "https://schema.org/"
   ogc: "http://www.opengis.net/def/media-type/ogc/1.0/"
   iana: "https://www.iana.org/assignments/media-types/"
   cwltool: "http://commonwl.org/cwltool#"
+

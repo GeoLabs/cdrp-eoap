@@ -1,0 +1,20 @@
+name: myenv
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - requests
+  - python-dateutil
+  - pandas
+  - gdal=3.6.2
+  - matplotlib
+  - numpy
+  - pip
+  - pip:
+      - rasterio
+      - numpy
+      - loguru
+      - click
+      - rio-stac
+      - opencv-python-headless
+      - scikit-image

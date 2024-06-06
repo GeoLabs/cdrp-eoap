@@ -1,0 +1,271 @@
+cwlVersion: v1.0
+$namespaces:
+  s: https://schema.org/
+s:softwareVersion: 1.0.0
+schemas:
+  - http://schema.org/version/9.0/schemaorg-current-http.rdf
+$graph:
+- class: Workflow
+  id: geolabs_cdrp_d4lsft
+  label: GeoLabs - D131 - CDRP - Displacement due to landslide based on optical flow technique
+  doc: GeoLabs - D131 - CDRP - Displacement due to landslide based on optical flow technique
+  s:author:
+    - class: s:Person
+      s:identifier: https://orcid.org/0000-0002-9505-6204
+      s:email: mailto:rajatshinde2303@gmail.com
+      s:name: Rajat Shinde
+
+  s:contributor:
+    - class: s:Person
+      s:identifier: https://orcid.org/0000-0002-9617-8641
+      s:email: mailto:gerald.fenoy@geolabs.fr
+      s:name: Gérald Fenoy
+
+  s:citation: https://doi.org/10.1109/PROC.1981.11918
+  requirements: []
+  inputs:
+    pre-s2-mozaic:
+      doc: Reference to a S2 mozaic pre event
+      label: S2 mozaic pre event reference
+      type: string
+    post-s2-mozaic:
+      doc: Reference to a S2 mozaic post event
+      label: S2 mozaic post event reference
+      type: string
+    dem:
+      doc: Reference to a DEM dataset
+      label: DEM dataset reference
+      type: string
+  outputs:
+    - id: stac_catalog
+      outputSource:
+        - node_detect/stac-catalog
+      type: Directory
+  steps:
+    node_detect:
+      run: "#run-app"
+      in:
+        pre-s2-mozaic: pre-s2-mozaic
+        post-s2-mozaic: post-s2-mozaic
+        dem: dem
+      out:
+        - stac-catalog
+- class: CommandLineTool
+  id: run-app
+  requirements:
+    InitialWorkDirRequirement:
+      listing:
+      - entryname: catalog.json
+        entry: |-  
+            {
+                "id": "catalog",
+                "stac_version": "1.0.0",
+                "links": [
+                    {
+                        "type": "application/geo+json",
+                        "rel": "item",
+                        "href": "result-item.json"
+                    },
+                    {
+                        "type": "application/json",
+                        "rel": "self",
+                        "href": "catalog.json"
+                    }
+                ],
+                "type": "Catalog",
+                "description": "Root catalog"
+            }
+      - entryname: app.py
+        entry: |-
+            import os
+            import numpy as np
+            import pandas as pd
+            import rasterio
+            from skimage.transform import resize
+            import cv2
+            import matplotlib.pyplot as plt
+            import click
+            import json
+            from loguru import logger
+            from rio_stac import stac
+
+            # Define paths
+            # sentinel_image_path1 = '/home/ubuntu/CRDP/ml-activity/landslide-mapping-with-cnn/data_taiwan/ClipImagePost_2018/96222004DEM_WGS84_0tci_post_S2B_51RUH_20181202_0_L2A.tif'
+            # sentinel_image_path2 = '/home/ubuntu/CRDP/ml-activity/landslide-mapping-with-cnn/data_taiwan/ClipImagePost_2021/96222004DEM_WGS84_0tci_post_S2A_51RUH_20211121_0_L2A.tif'
+            # dem_path = '/home/ubuntu/CRDP/ml-activity/landslide-mapping-with-cnn/data_taiwan/dem_resamp_reproj_2021/96222004DEM_WGS84_reproj_2021__resamp_2021_.tif'
+
+            # Inputs
+            # It would be better to start from STAC search then create the merged version
+            # ********* #
+            #sentinel_image_path1 = "/home/ubuntu/CRDP/ml-activity/landslide-mapping-with-cnn/merged_s2_pre_2018.tif"
+            #sentinel_image_path2 = "/home/ubuntu/CRDP/ml-activity/landslide-mapping-with-cnn/Merged_s2_2018_post.tif"
+            #dem_path = "/home/ubuntu/CRDP/ml-activity/landslide-mapping-with-cnn/merged_dem_2018.tif"
+            # ********* #
+            # Outputs 
+            # Should we provide access to the CSV too?
+            #output_csv_path = 'displacement.csv'
+            #output_tiff_path = 'displacement.tif'
+
+            # Read Sentinel-2 image
+            def read_sentinel_image(image_path):
+                with rasterio.open(image_path) as src:
+                    image = src.read()
+                    profile = src.profile
+                return image, profile
+
+            # Read DEM data
+            def read_dem(dem_path):
+                with rasterio.open(dem_path) as src:
+                    dem = src.read(1)
+                return dem
+
+            # Preprocess data
+            def preprocess_data(sentinel_image, dem):
+                dem_resized = resize(dem, (sentinel_image.shape[1], sentinel_image.shape[2]))
+                combined_data = np.vstack((sentinel_image, dem_resized[np.newaxis, :, :]))
+                return combined_data
+
+            # Convert to single-channel grayscale image
+            def convert_to_grayscale(image):
+                if image.shape[0] == 1:
+                    return image[0]  # Already single-channel
+                else:
+                    # Convert multi-channel image to single-channel using average method
+                    grayscale_image = np.mean(image, axis=0)
+                    return grayscale_image
+
+            # Ensure the images are the same size and single-channel
+            def preprocess_for_optical_flow(image1, image2):
+                if image1.shape != image2.shape:
+                    raise ValueError("Input images must have the same dimensions")
+                
+                # Convert to float32 as required by OpenCV
+                image1 = image1.astype(np.float32)
+                image2 = image2.astype(np.float32)
+                
+                return image1, image2
+
+            # Calculate optical flow
+            def calculate_optical_flow(image1, image2):
+                image1, image2 = preprocess_for_optical_flow(image1, image2)
+                flow = cv2.calcOpticalFlowFarneback(image1, image2, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+                mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+                return mag, ang
+
+            # Save displacement to CSV
+            def save_displacement_to_csv(mag, output_csv_path):
+                displacement = mag.flatten()
+                df = pd.DataFrame(displacement, columns=['displacement'])
+                df.to_csv(output_csv_path, index=False)
+
+            # Save displacement to TIFF
+            def save_displacement_to_tiff(mag, profile, output_tiff_path):
+                # Update the profile for a single-band output
+                profile.update(dtype=rasterio.float32, count=1, compress='lzw')
+                
+                # Write the data to a new TIFF file
+                with rasterio.open(output_tiff_path, 'w', **profile) as dst:
+                    dst.write(mag.astype(rasterio.float32), 1)
+
+            @click.command(
+                short_help="Generate the displacement due to landslide based on optical flow technique",
+                help="Generate the displacement due to landslide based on optical flow technique"
+            )
+            @click.option(
+                "--pre-s2-mozaic",
+                "s2_pre",
+                help="The S2 mozaic before the event",
+                required=True
+            )
+            @click.option(
+                "--post-s2-mozaic",
+                "s2_post",
+                help="The S2 mozaic after the event",
+                required=True
+            )
+            @click.option(
+                "--dem",
+                "dem_path",
+                help="DEM image to use",
+                required=True
+            )
+
+            # Main processing workflow
+            def main(s2_pre,s2_post,dem_path):
+                # Output naming
+                output_csv_path = 'displacement.csv'
+                output_tiff_path = 'displacement.tif'
+
+                # Read images and DEM data
+                sentinel_image1, profile1 = read_sentinel_image(s2_pre)
+                sentinel_image2, profile2 = read_sentinel_image(s2_post)
+                dem = read_dem(dem_path)
+                
+                # Preprocess data
+                combined_data1 = preprocess_data(sentinel_image1, dem)
+                combined_data2 = preprocess_data(sentinel_image2, dem)
+                
+                # Convert Sentinel-2 images to grayscale
+                grayscale_image1 = convert_to_grayscale(sentinel_image1)
+                grayscale_image2 = convert_to_grayscale(sentinel_image2)
+                
+                # Calculate optical flow between two grayscale images
+                mag, ang = calculate_optical_flow(grayscale_image1, grayscale_image2)
+                
+                # Save displacement to CSV
+                save_displacement_to_csv(mag, output_csv_path)
+                print(f"Displacement data saved to {output_csv_path}")
+                
+                # Save displacement to TIFF
+                save_displacement_to_tiff(mag, profile1, output_tiff_path)
+                print(f"Displacement TIFF saved to {output_tiff_path}")
+
+                with rasterio.open(output_tiff_path, 'r', **profile1) as dst:
+                    res=stac.create_stac_item(
+                        id="displacement",
+                        source=dst,
+                        asset_roles=["data", "visual"],
+                        with_proj=True,
+                        with_raster=False,
+                    )
+                    local_dict=res.to_dict()
+                    open("result-item.json", "w").write(json.dumps(local_dict))
+                    logger.info("Write stac item ...")
+
+
+            if __name__ == "__main__":
+                main()
+
+    InlineJavascriptRequirement: {}
+    EnvVarRequirement:
+      envDef:
+        PYTHONPATH: /opt/conda/envs/myenv/site-packages/
+    ResourceRequirement:
+      coresMax: 1
+      ramMax: 1024
+  hints:
+    DockerRequirement:
+      dockerPull: geolabs/cdrp-d4lsft:1.0
+  baseCommand: ["python", "-m", "app"]
+  arguments: []
+  inputs:
+    pre-s2-mozaic:
+      type: string
+      inputBinding:
+          prefix: --pre-s2-mozaic
+    post-s2-mozaic:
+      type: string
+      inputBinding:
+          prefix: --post-s2-mozaic
+    dem:
+      type: string
+      inputBinding:
+          prefix: --dem
+
+  outputs:
+    stac-catalog:
+      outputBinding:
+          glob: .
+      type: Directory
+
+
