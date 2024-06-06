@@ -4,10 +4,10 @@ For a given DEM, this EOAP computes Slope and Aspect using the [RichDEM](https:/
 
 ## Usage
 
-First, build the required docker image and tag it with `geolabs/cdrp-hsa-package:1.0`.
+First, build the required docker image and tag it with `geolabs/cdrp-mli-package:1.0`.
 
 ````
-docker build . -t geolabs/cdrp-hsa-package:1.0
+docker build . -t geolabs/cdrp-mli-package:1.0
 ````
 
 Run the EOAP from the command line.
