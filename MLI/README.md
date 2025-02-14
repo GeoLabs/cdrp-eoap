@@ -12,14 +12,14 @@ docker build . -t geolabs/cdrp-mli-package:1.0
 
 Run the EOAP from the command line.
 
-python -m app --dem https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/DEM/DEM_030.tif \
-  --model https://www.geolabs.fr/dl/.RawData/M_ALL_006.hdf5 \
-  --hillshade https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/DEM/DEM_030_HILLSHADE.tif  \
-  --slope https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/DEM/DEM_030_SLOPE.tif  \
-  --pre-image https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/fromOptical/JIUZ_PRE_S2_RGB_010_UINT8.tif \
-  --post-image https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/fromOptical/JIUZ_POST_S2_RGB_010_UINT8.tif \
-  --mask https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/noDataMask/SNOW_CLOUD_MASK_010.tif \
-  --boundary https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/testBoundary/Test_006.tif
+python -m app --dem <dem_data_file> \
+  --model https://www.geolabs.fr/dl/.RawData/M_ALL_006.hdf5 \  #Model file
+  --hillshade <hill_shade_data>  \
+  --slope <slope_data>  \
+  --pre-image <pre_event_image> \
+  --post-image <post_event_image> \
+  --mask <mask_for_cloud_snow> \
+  --boundary <aoi_boundary>
 
 ````
 cwltool app.yml#geolabs_cdrp_hsa --item <YOUR_DEM_URL>
@@ -45,14 +45,14 @@ curl -X 'POST' \
   -H 'Content-Type: application/json' \
   -d '{
   "inputs": {
-    "dem": "https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/DEM/DEM_030.tif",
+    "dem": "<dem_data_file>",
     "model": "https://www.geolabs.fr/dl/.RawData/M_ALL_006.hdf5",
-    "hillshade": "https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/DEM/DEM_030_HILLSHADE.tif",
-    "slope": "https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/DEM/DEM_030_SLOPE.tif",
-    "pre-image": "https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/fromOptical/JIUZ_PRE_S2_RGB_010_UINT8.tif",
-    "post-image": "https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/fromOptical/JIUZ_POST_S2_RGB_010_UINT8.tif",
-    "mask": "https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/noDataMask/SNOW_CLOUD_MASK_010.tif",
-    "boundary": "https://www.geolabs.fr/dl/.RawData/AOI_E_S2-S2/testBoundary/Test_006.tif"
+    "hillshade": "<hill_shade_file>",
+    "slope": "<slope_data_file>",
+    "pre-image": "<pre_event_file>",
+    "post-image": "<post_image_file>",
+    "mask": "<mask_data>",
+    "boundary": "<aoi_boundary>"
   }
 }'
 ````
