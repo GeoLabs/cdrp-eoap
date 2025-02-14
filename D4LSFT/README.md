@@ -14,9 +14,9 @@ Run the EOAP from the command line.
 
 ````
 cwltool ../app.yml#geolabs_cdrp_hsa \
-    --pre-s2-mozaic https://www.geolabs.fr/dl/.taiwan/data_taiwan/S2_mozaic/merged_s2_pre_2018.tif \
-    --post-s2-mozaic https://www.geolabs.fr/dl/.taiwan/data_taiwan/S2_mozaic/Merged_s2_2018_post.tif \
-    --dem https://www.geolabs.fr/dl/.taiwan/data_taiwan/DEM/merged_dem_2018.tif
+    --pre-s2-mozaic <link_to_mosaic_before_disaster> \
+    --post-s2-mozaic <link_to_mosaic_after_disaster> \
+    --dem <dem_data>
 ````
 
 To deploy the EOAP on the ZOO-Project-DRU, use the following requests.
